@@ -5,6 +5,7 @@ require 'dm-core'
 require 'dm-migrations'
 require 'dm-validations'
 require 'dm-aggregates'
+require 'dm-serializer'
 
 configure do
   enable :sessions
@@ -46,63 +47,45 @@ class User
   validates_presence_of :uid
   validates_uniqueness_of :uid
 
+  has n, :tags
   has n, :tweets
 
-  # def favorite_query(count,tense)
-  #   CLIENT.favorites(self.uid,options={:count => count, })
-  # end
-
-  attr_accessor :fetch_tweets
+  attr_accessor :fetch_tweets 
 
   def fetch_tweets
     fave_count = self.tweets.length
     if self.tweets.length == 0
-      CLIENT.favorites(self.uid,options={:count => 200}).each do |tweet|
-        self.tweets.push(
-          Tweet.first_or_create(
-            :uid => tweet.id,
-            :text => tweet.text,
-            :username => tweet.user.name,
-            :screenname => tweet.user.screen_name,
-            :created_at => tweet.created_at,
-            :user_id => self.id
-          )
-        )
-      end
+      tweet_params({:count => 200})
       fetch_tweets
     else
-      CLIENT.favorites(self.uid,options={:count => 200, :max_id => (self.tweets.min(:uid)-1)}).each do |tweet|
-        self.tweets.push(
-          Tweet.first_or_create(
-            :uid => tweet.id,
-            :text => tweet.text,
-            :username => tweet.user.name,
-            :screenname => tweet.user.screen_name,
-            :created_at => tweet.created_at,
-            :user_id => self.id
-          )
-        )
-      end
-      CLIENT.favorites(self.uid,options={:count => 200, :since_id => self.tweets.max(:uid)}).each do |tweet|
-        self.tweets.push(
-          Tweet.first_or_create(
-            :uid => tweet.id,
-            :text => tweet.text,
-            :username => tweet.user.name,
-            :screenname => tweet.user.screen_name,
-            :created_at => tweet.created_at,
-            :user_id => self.id
-          )
-        )
-      end
+      tweet_params({:count => 200, :max_id => (self.tweets.min(:uid)-1)})
+      tweet_params({:count => 200, :since_id => self.tweets.max(:uid)})
       if fave_count == self.tweets.length
-         return
-       else
+        return
+      else
         fetch_tweets
       end
     end  
   end
 
+  def tweet_params(query_options)
+    CLIENT.favorites(self.uid,options=query_options).each do |tweet|
+      self.tweets.push(Tweet.first_or_create(:uid => tweet.id, :text => tweet.text, :username => tweet.user.name, :screenname => tweet.user.screen_name, :created_at => tweet.created_at, :user_id => self.id))
+    end
+  end 
+end
+
+class Tag
+  include DataMapper::Resource
+  property :id, Serial
+  property :name, String
+  property :slug, String, default: -> r,p { r.to_slug }
+  belongs_to :user
+  has n, :tweets, :through => Resource
+
+  def to_slug
+    name.downcase.gsub(/\W/,'-').squeeze('-').chomp('-') 
+  end
 end
 
 class Tweet
@@ -113,7 +96,9 @@ class Tweet
   property :username, String
   property :screenname, String
   property :created_at, DateTime
+  property :archived, String, :default => false
   belongs_to :user
+  has n, :tags, :through => Resource
 end
 
 DataMapper.finalize
