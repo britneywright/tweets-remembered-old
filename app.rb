@@ -50,7 +50,7 @@ class User
   has n, :tags
   has n, :tweets
 
-  attr_accessor :fetch_tweets 
+  attr_accessor :fetch_tweets, :tag_list 
 
   def fetch_tweets
     fave_count = self.tweets.length
@@ -65,7 +65,15 @@ class User
       else
         fetch_tweets
       end
-    end  
+    end
+  end
+
+  def tag_list
+    tags.map(&:name).join(", ")
+  end
+
+  def tag_list=(names)
+    tags.map(&:name).join(", ")
   end
 
   def tweet_params(query_options)
@@ -99,12 +107,21 @@ class Tweet
   property :archived, String, :default => false
   belongs_to :user
   has n, :tags, :through => Resource
+
+  def tagged_with
+    Tag.first(:slug => slug).tweets
+  end
 end
 
 DataMapper.finalize
 
 get '/' do
-  erb :index
+  if current_user?
+    @user = User.first(:uid => session[:uid])
+    erb :index
+  else
+    erb :welcome
+  end
 end
 
 get '/users' do
@@ -124,9 +141,9 @@ post '/catalog' do
   @user.fetch_tweets
 end
 
-get '/tweet/:url' do
-  @tweet = Project.first(:uid => params[:url])
-  "#{@tweet.uid}"
+get '/tags' do
+  @tags = User.first(:uid => session[:uid]).tags
+  erb :"tags/index"
 end
 
 get '/login' do

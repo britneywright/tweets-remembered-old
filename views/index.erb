@@ -1,1 +1,11 @@
 <h1>Welcome to Tweets Remembered</h1>
+Tweets: <%= @user.tweets.length %>
+<ol>
+  <% @user.tweets.each do |tweet| %>
+    <li>
+      <p><%= tweet.text %></p>
+      <p><%= tweet.username %> (@<%= tweet.screenname %>), <%= tweet.created_at.strftime("%b %e, %Y %H:%M") %></p>
+      <p><a href="https://twitter.com/<%= tweet.screenname %>/status/<%= tweet.uid %>">Link</a></p>
+    </li>
+  <% end %>
+</ol>
