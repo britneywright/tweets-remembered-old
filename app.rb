@@ -4,6 +4,7 @@ require 'omniauth-twitter'
 require 'dm-core'
 require 'dm-migrations'
 require 'dm-validations'
+require 'dm-aggregates'
 
 configure do
   enable :sessions
@@ -24,7 +25,8 @@ helpers do
 
   def find_or_create_by_uid
     User.find{|f| f["uid"] == session[:uid]} || User.create(uid: session[:uid])
-  end  
+  end
+
 end
 
 use OmniAuth::Builder do
@@ -43,6 +45,75 @@ class User
 
   validates_presence_of :uid
   validates_uniqueness_of :uid
+
+  has n, :tweets
+
+  # def favorite_query(count,tense)
+  #   CLIENT.favorites(self.uid,options={:count => count, })
+  # end
+
+  attr_accessor :fetch_tweets
+
+  def fetch_tweets
+    fave_count = self.tweets.length
+    if self.tweets.length == 0
+      CLIENT.favorites(self.uid,options={:count => 200}).each do |tweet|
+        self.tweets.push(
+          Tweet.first_or_create(
+            :uid => tweet.id,
+            :text => tweet.text,
+            :username => tweet.user.name,
+            :screenname => tweet.user.screen_name,
+            :created_at => tweet.created_at,
+            :user_id => self.id
+          )
+        )
+      end
+      fetch_tweets
+    else
+      CLIENT.favorites(self.uid,options={:count => 200, :max_id => (self.tweets.min(:uid)-1)}).each do |tweet|
+        self.tweets.push(
+          Tweet.first_or_create(
+            :uid => tweet.id,
+            :text => tweet.text,
+            :username => tweet.user.name,
+            :screenname => tweet.user.screen_name,
+            :created_at => tweet.created_at,
+            :user_id => self.id
+          )
+        )
+      end
+      CLIENT.favorites(self.uid,options={:count => 200, :since_id => self.tweets.max(:uid)}).each do |tweet|
+        self.tweets.push(
+          Tweet.first_or_create(
+            :uid => tweet.id,
+            :text => tweet.text,
+            :username => tweet.user.name,
+            :screenname => tweet.user.screen_name,
+            :created_at => tweet.created_at,
+            :user_id => self.id
+          )
+        )
+      end
+      if fave_count == self.tweets.length
+         return
+       else
+        fetch_tweets
+      end
+    end  
+  end
+
+end
+
+class Tweet
+  include DataMapper::Resource
+  property :id, Serial
+  property :uid, Integer
+  property :text, Text
+  property :username, String
+  property :screenname, String
+  property :created_at, DateTime
+  belongs_to :user
 end
 
 DataMapper.finalize
@@ -58,8 +129,19 @@ end
 
 get '/catalog' do
   halt(401,'Not Authorized') unless current_user?
-  @user = find_or_create_by_uid
+  @user = User.first(:uid => session[:uid])
+  @user.fetch_tweets
   erb :catalog
+end
+
+post '/catalog' do
+  @user = find_or_create_by_uid
+  @user.fetch_tweets
+end
+
+get '/tweet/:url' do
+  @tweet = Project.first(:uid => params[:url])
+  "#{@tweet.uid}"
 end
 
 get '/login' do

@@ -1,14 +1,16 @@
 <% @current = CLIENT.user(@user.uid) %>
 <h1><%= @current.screen_name %></h1>
 <p>Favorites: <%= @current.favourites_count %></p>
-<p><%= @current.name %></p>
-<p><%= @user.id %></p>
-  <ol>
-  <% CLIENT.favorites(@user.uid,options={:count => 200, :max_id => 502797053416976384}).each do |status| %>
+<p>Name: <%= @current.name %></p>
+<p>Id: <%= @user.uid %></p>
+Tweets: <%= @user.tweets.length %>
+<ol>
+  <% @user.tweets.each do |tweet| %>
     <li>
-      <p><%= status.text %></p>
-      <p><%= status.user.name %> (@<%= status.user.screen_name %>), <%= status.created_at %></p>
-      <p><a href="https://twitter.com/<%= status.user.screen_name %>/status/<%= status.id %>">Link</a></p>
+      <p><%= tweet.uid %></p>
+      <p><%= tweet.text %></p>
+      <p><%= tweet.username %> (@<%= tweet.screenname %>), <%= tweet.created_at %></p>
+      <p><a href="https://twitter.com/<%= tweet.screenname %>/status/<%= tweet.uid %>">Link</a></p>
     </li>
   <% end %>
 </ol>
