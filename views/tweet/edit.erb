@@ -1,0 +1,15 @@
+<h1>Edit <%= @tweet.text %></h1>
+<form action="/tweets/<%= @tweet.id %>" method="POST">
+  <input type="hidden" name="_method" value="PUT">
+  <div class="field">
+    <label for="tag">Tags</label>
+    <input type="text" name="tweet[tag_list]" value="<%= @tweet.tag_list %>">
+  </div>  
+  <div class="field">
+    <label for="tag">Archive</label>
+    <input type="checkbox" name="tweet[archived]" value="true">
+  </div> 
+  <div class="actions">
+    <input type="submit" value="Save Tweet">
+  </div>   
+</form>

@@ -1,0 +1,8 @@
+<p><%= @tweet.text %></p>
+<p>Archived: <%= @tweet.archived %></p>
+<p><%= @tweet.username %> (<%= @tweet.screenname %>)</p>
+<p><%= @tweet.uid %></p>
+<p>Categories:</p>
+<% @tweet.tags.each do |t| %>
+  <li><%= t.name %></li>
+<% end %>

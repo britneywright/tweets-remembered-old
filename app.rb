@@ -6,6 +6,8 @@ require 'dm-migrations'
 require 'dm-validations'
 require 'dm-aggregates'
 require 'dm-serializer'
+require 'json'
+
 
 configure do
   enable :sessions
@@ -68,12 +70,14 @@ class User
     end
   end
 
-  def tag_list
+  def tag_list=(names)
     tags.map(&:name).join(", ")
   end
 
   def tag_list=(names)
-    tags.map(&:name).join(", ")
+    self.tags = names.split(",").map do |n|
+      Tag.first_or_create(:name => n.strip, :user_id => self.id)
+    end
   end
 
   def tweet_params(query_options)
@@ -98,18 +102,34 @@ end
 
 class Tweet
   include DataMapper::Resource
-  property :id, Serial
-  property :uid, Integer
+  property :id, Serial, :key => true
+  property :uid, Integer, :precision => 20
   property :text, Text
   property :username, String
   property :screenname, String
   property :created_at, DateTime
-  property :archived, String, :default => false
+  property :archived, Boolean, :default => false
   belongs_to :user
   has n, :tags, :through => Resource
 
+  attr_accessor :tag_list
+
+  def tag_list
+    tags.map(&:name).join(", ")
+  end
+
+  def tag_list=(names)
+    self.tags = names.split(",").map do |n|
+      Tag.first_or_create(:name => n.strip, :user_id => self.user_id)
+    end
+  end
+
   def tagged_with
     Tag.first(:slug => slug).tweets
+  end
+
+  def uid_string
+    uid.to_s
   end
 end
 
@@ -144,6 +164,59 @@ end
 get '/tags' do
   @tags = User.first(:uid => session[:uid]).tags
   erb :"tags/index"
+end
+
+#GET Returns all tweets
+get '/tweets' do
+  @tweets = User.first(:uid => session[:uid]).tweets.all(:order => [:uid.desc])
+  @tweets.to_json(:methods => [:tags,:tag_list,:uid_string])
+end
+
+
+get '/tweets/:id/change' do
+  @tweet = Tweet.get(params[:id])
+  @tags = Tag.all
+  erb :"tweet/edit"
+end
+
+get '/tweets/:id/show' do
+  @tweet = Tweet.get(params[:id])
+  erb :"tweet/show"
+end
+
+#GET - Returns single post
+get '/tweets/:id' do
+  @tweet = Tweet.get(params[:id])
+  @tweet.to_json(:methods => [:tags,:tag_list,:uid_string])
+end
+
+#PUT - Updates existing tweet
+# put '/tweets/:id' do
+#   @tweet = Tweet.get(params[:id].to_i)
+#   if @tweet.archived == true
+#     @tweet.update(:archived => false)
+#   else
+#     @tweet.update(:archived => true)
+#   end
+#   if @tweet.save
+#     @tweet.to_json
+#   else
+#     halt 500
+#   end
+# end
+
+put '/tweets/:id' do
+  begin
+    params.merge! JSON.parse(request.env["rack.input"].read)
+  rescue JSON::ParserError
+    logger.error "Cannot parse request body."
+  end  
+  @tweet = Tweet.get(params[:id])
+  if @tweet.update(:archived => params[:archived], :tag_list => params[:tag_list])
+    status 201
+  else
+    halt 500
+  end
 end
 
 get '/login' do
