@@ -1,11 +1,14 @@
-source 'http://rubygems.org'
+source "http://rubygems.org"
 
-require 'sinatra'
-require 'twitter'
-require 'omniauth-twitter'
-require 'dm-core'
-require 'dm-migrations'
-require 'dm-validations'
+gem "sinatra"
+gem "twitter"
+gem "omniauth-twitter"
+gem "dm-core"
+gem "dm-migrations"
+gem "dm-validations"
+gem "dm-aggregates"
+gem "dm-serializer"
+gem "json"
 gem "pg", :group => :production
 gem "dm-postgres-adapter", :group => :production
 gem "dm-sqlite-adapter", :group => :development

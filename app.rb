@@ -153,6 +153,7 @@ get '/catalog' do
   halt(401,'Not Authorized') unless current_user?
   @user = User.first(:uid => session[:uid])
   @user.fetch_tweets
+  redirect to("/")
   erb :catalog
 end
 
