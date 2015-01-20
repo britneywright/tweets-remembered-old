@@ -2,6 +2,7 @@ source "http://rubygems.org"
 
 gem "sinatra"
 gem "twitter"
+gem "omniauth"
 gem "omniauth-twitter"
 gem "dm-core"
 gem "dm-migrations"

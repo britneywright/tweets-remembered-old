@@ -98,6 +98,7 @@ DEPENDENCIES
   dm-sqlite-adapter
   dm-validations
   json
+  omniauth
   omniauth-twitter
   pg
   sinatra
