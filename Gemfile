@@ -9,7 +9,7 @@ gem "dm-validations"
 gem "dm-aggregates"
 gem "dm-serializer"
 gem "json"
+gem 'thin'
 gem "pg", :group => :production
 gem "dm-postgres-adapter", :group => :production
 gem "dm-sqlite-adapter", :group => :development
-gem 'thin' , :group => :development
