@@ -103,7 +103,7 @@ end
 class Tweet
   include DataMapper::Resource
   property :id, Serial, :key => true
-  property :uid, Integer, :precision => 20
+  property :uid, Integer
   property :text, Text
   property :username, String
   property :screenname, String
@@ -152,7 +152,7 @@ end
 get '/catalog' do
   halt(401,'Not Authorized') unless current_user?
   @user = User.first(:uid => session[:uid])
-
+  @user.fetch_tweets
   redirect to("/")
   erb :catalog
 end
