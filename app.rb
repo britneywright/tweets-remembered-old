@@ -103,7 +103,7 @@ end
 class Tweet
   include DataMapper::Resource
   property :id, Serial, :key => true
-  property :uid, Integer
+  property :uid, Integer, :min => 0, :max => 2**32
   property :text, Text
   property :username, String
   property :screenname, String
