@@ -60,8 +60,9 @@ class User
       tweet_params({:count => 200})
       fetch_tweets
     else
-      tweet_params({:count => 200, :max_id => self.tweets.min(:uid-1)})
-      tweet_params({:count => 200, :since_id => self.tweets.max(:uid)})
+      smallest = self.tweets.minimum(:uid)
+      tweet_params({:count => 200, :max_id => (smallest-1)})
+      tweet_params({:count => 200, :since_id => self.tweets.maximum(:uid)})
       if fave_count == self.tweets.length
         return
       else
@@ -69,7 +70,7 @@ class User
       end
     end
   end
-  
+
   def tag_list=(names)
     tags.map(&:name).join(", ")
   end
@@ -137,7 +138,7 @@ DataMapper.finalize
 
 get '/' do
   if current_user?
-    @user = User.first(:uid => session[:uid])
+    @user = User.find_by(:uid => session[:uid])
     erb :index
   else
     erb :welcome
@@ -151,7 +152,7 @@ end
 
 get '/catalog' do
   halt(401,'Not Authorized') unless current_user?
-  @user = User.first(:uid => session[:uid])
+  @user = User.find_by(:uid => session[:uid])
   @user.fetch_tweets
   redirect to("/")
   erb :catalog
