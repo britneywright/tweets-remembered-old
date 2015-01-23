@@ -54,26 +54,22 @@ class User
 
   attr_accessor :fetch_tweets, :tag_list 
 
-  # def fetch_tweets
-  #   fave_count = self.tweets.length
-  #   if self.tweets.length == 0
-  #     tweet_params({:count => 200})
-  #     fetch_tweets
-  #   else
-  #     tweet_params({:count => 200, :max_id => self.tweets.min(:uid-1)})
-  #     tweet_params({:count => 200, :since_id => self.tweets.max(:uid)})
-  #     if fave_count == self.tweets.length
-  #       return
-  #     else
-  #       fetch_tweets
-  #     end
-  #   end
-  # end
-
   def fetch_tweets
-    tweet_params({:count => 200})
+    fave_count = self.tweets.length
+    if self.tweets.length == 0
+      tweet_params({:count => 200})
+      fetch_tweets
+    else
+      tweet_params({:count => 200, :max_id => self.tweets.min(:uid-1)})
+      tweet_params({:count => 200, :since_id => self.tweets.max(:uid)})
+      if fave_count == self.tweets.length
+        return
+      else
+        fetch_tweets
+      end
+    end
   end
-
+  
   def tag_list=(names)
     tags.map(&:name).join(", ")
   end
