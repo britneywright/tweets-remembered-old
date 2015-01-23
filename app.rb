@@ -138,7 +138,7 @@ DataMapper.finalize
 
 get '/' do
   if current_user?
-    @user = User.find_by(:uid => session[:uid])
+    @user = User.first(:uid => session[:uid])
     erb :index
   else
     erb :welcome
@@ -152,7 +152,7 @@ end
 
 get '/catalog' do
   halt(401,'Not Authorized') unless current_user?
-  @user = User.find_by(:uid => session[:uid])
+  @user = User.first(:uid => session[:uid])
   @user.fetch_tweets
   redirect to("/")
   erb :catalog
