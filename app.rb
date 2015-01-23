@@ -60,8 +60,7 @@ class User
       tweet_params({:count => 200})
       fetch_tweets
     else
-      smallest = self.tweets.min(:uid)
-      tweet_params({:count => 200, :max_id => (smallest-1)})
+      tweet_params({:count => 200, :max_id => (self.tweets.min(:uid)-1)})
       tweet_params({:count => 200, :since_id => self.tweets.max(:uid)})
       if fave_count == self.tweets.length
         return
